@@ -1,6 +1,10 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
+const path = require('path');
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'dist')));
+
 
 app.use(cors());
 app.use(express.json());
@@ -22,6 +26,10 @@ let notes = [
     important: true,
   },
 ];
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
 
 app.get("/", (request, response) => {
   response.send("<h1>Hello world</h1>");

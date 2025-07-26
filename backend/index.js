@@ -38,7 +38,7 @@ app.get("/api/notes/:id", (request, response) => {
   if (note) {
     response.json(note);
   } else {
-    response.status(404).end();
+    response.status(404).json({ error: 'note not found' });
   }
 });
 app.put('/api/notes/:id', (request, response) => {
@@ -97,9 +97,18 @@ app.post("/api/notes", (request, response) => {
   response.json(note);
 });
 
+// Handle unknown API endpoints
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'unknown endpoint' });
+});
+
 // Catch-all handler for React Router
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'), (err) => {
+    if (err) {
+      res.status(500).json({ error: 'Could not serve the application' });
+    }
+  });
 });
 
 

@@ -97,6 +97,7 @@ app.post("/api/notes", (request, response) => {
   response.json(note);
 });
 
+// Catch-all handler for React Router
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });

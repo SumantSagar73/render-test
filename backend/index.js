@@ -98,7 +98,7 @@ app.post("/api/notes", (request, response) => {
 });
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../backend/dist', 'index.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 

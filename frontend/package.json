@@ -8,8 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "json-server -p 3001 db.json"
-
+    "server": "json-server -p 3001 db.json",
+    "build-and-copy": "npm run build && xcopy -r dist ../backend/"
   },
   "dependencies": {
     "axios": "^1.10.0",

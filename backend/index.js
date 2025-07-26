@@ -5,7 +5,6 @@ const path = require('path');
 app.use(express.static(path.join(__dirname, 'dist')));
 
 
-app.use(cors());
 app.use(express.json());
 
 let notes = [

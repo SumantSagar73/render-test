@@ -1,8 +1,13 @@
 require("dotenv").config();
 const express = require("express");
+const path = require("path");
 const Note = require("./models/note");
 
 const app = express();
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, "dist")));
+
 //Middleware to parse JSON bodies
 app.use(express.json());
 
@@ -78,11 +83,11 @@ app.delete("/api/notes/:id", (req, res, next) => {
     .catch((error) => next(error));
 });
 
-// ---Unknow endpoint middleware ---
-
-app.use((req, res) => {
+// ---Unknown endpoint middleware for API routes ---
+app.use("/api", (req, res) => {
   res.status(404).send({ error: "unknown endpoint" });
 });
+
 // ---Centralized error handling middleware ---
 app.use((error, req, res, next) => {
   console.error(error.message);

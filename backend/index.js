@@ -1,117 +1,111 @@
+require("dotenv").config();
 const express = require("express");
+const Note = require("./models/note");
+
 const app = express();
-const path = require('path');
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, 'dist')));
-
-
+//Middleware to parse JSON bodies
 app.use(express.json());
 
-let notes = [
-  {
-    id: "1",
-    content: "HTML is easy",
-    important: true,
-  },
-  {
-    id: "2",
-    content: "Browser can execute only JavaScript",
-    important: false,
-  },
-  {
-    id: "3",
-    content: "GET and POST are the most important methods of HTTP protocol",
-    important: true,
-  },
-];
+// --- API Routes ---
 
-
-
-
+//Get all Notes
 app.get("/api/notes", (request, response) => {
-  response.json(notes);
+  Note.find({}).then((notes) => {
+    response.json(notes);
+  });
 });
 
-app.get("/api/notes/:id", (request, response) => {
-  const id = request.params.id;
-  const note = notes.find((note) => note.id === id);
-  if (note) {
-    response.json(note);
-  } else {
-    response.status(404).json({ error: 'note not found' });
-  }
+//Get one note by ID
+app.get("/api/notes/:id", (req, res, next) => {
+  Note.findById(req.params.id)
+    .then((note) => {
+      if (note) {
+        res.json(note);
+      } else {
+        res.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
 });
-app.put('/api/notes/:id', (request, response) => {
-  const id = request.params.id;
-  const body = request.body;
 
-  const noteIndex = notes.findIndex(note => note.id === id);
-
-  if (noteIndex === -1) {
-    return response.status(404).json({ error: 'note not found' });
-  }
+//Create a new note
+app.post("/api/notes", (req, res, next) => {
+  const body = req.body;
 
   if (!body.content) {
-    return response.status(400).json({ error: "content missing" });
-  }
-
-  const updatedNote = {
-    ...notes[noteIndex],
-    content: body.content,
-    important: body.important || false,
-  };
-
-  notes[noteIndex] = updatedNote;
-
-  response.json(updatedNote);
-});
-
-
-app.delete("/api/notes/:id", (request, response) => {
-  const id = request.params.id;
-  notes = notes.filter((note) => note.id !== id);
-
-  response.status(204).end();
-});
-
-const generateId = () => {
-  const maxID =
-    notes.length > 0 ? Math.max(...notes.map((n) => Number(n.id))) : 0;
-  return String(maxID + 1);
-};
-app.post("/api/notes", (request, response) => {
-  const body = request.body;
-
-  if (!body.content) {
-    return response.status(400).json({
+    return res.status(400).json({
       error: "content missing",
     });
   }
 
-  const note = {
+  const note = new Note({
     content: body.content,
     important: body.important || false,
-    id: generateId(),
-  };
-  notes = notes.concat(note);
-  response.json(note);
+  });
+  note
+    .save()
+    .then((savedNote) => {
+      res.json(savedNote);
+    })
+    .catch((error) => next(error));
 });
 
-// Handle unknown API endpoints
-app.use('/api', (req, res) => {
-  res.status(404).json({ error: 'unknown endpoint' });
+//Update a note
+app.put("/api/notes/:id", (req, res, next) => {
+  const { content, important } = req.body;
+
+  Note.findByIdAndUpdate(
+    req.params.id,
+    { content, important },
+    { new: true, runValidators: true, context: "query" }
+  )
+    .then((updatedNote) => {
+      if (updatedNote) {
+        res.json(updatedNote);
+      } else {
+        res.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
+});
+
+//Delete a note
+app.delete("/api/notes/:id", (req, res, next) => {
+  Note.findByIdAndDelete(req.params.id)
+    .then(() => {
+      res.status(204).end();
+    })
+    .catch((error) => next(error));
+});
+
+// ---Unknow endpoint middleware ---
+
+app.use((req, res) => {
+  res.status(404).send({ error: "unknown endpoint" });
+});
+// ---Centralized error handling middleware ---
+app.use((error, req, res, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return res.status(400).send({ error: "malformatted id" });
+  } else if (error.name === "ValidationError") {
+    return res.status(400).json({ error: error.message });
+  }
+
+  next(error);
 });
 
 // Catch-all handler for React Router
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'), (err) => {
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"), (err) => {
     if (err) {
-      res.status(500).json({ error: 'Could not serve the application' });
+      res.status(500).json({ error: "Could not serve the application" });
     }
   });
 });
-
-
+//---Start the server---
 const PORT = process.env.PORT || 3001;
-app.listen(PORT);
-console.log(`Server running on port ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

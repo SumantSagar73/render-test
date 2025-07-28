@@ -9,12 +9,18 @@ const App = () => {
   const [notes, setNotes] = useState([]);
   const [newNote, setNewNote] = useState("");
   const [showAll, setShowAll] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("some error happened...");
+  const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
-    noteService.getAll().then((initialNotes) => {
-      setNotes(initialNotes);
-    });
+    noteService
+      .getAll()
+      .then((initialNotes) => {
+        setNotes(initialNotes);
+      })
+      .catch(() => {
+        setErrorMessage("Failed to load notes from server");
+        setTimeout(() => setErrorMessage(null), 5000);
+      });
   }, []);
 
   const addNote = (event) => {
@@ -32,10 +38,16 @@ const App = () => {
       important: Math.random() < 0.5,
     };
 
-    noteService.create(noteObject).then((returnedNote) => {
-      setNotes(notes.concat(returnedNote));
-      setNewNote("");
-    });
+    noteService
+      .create(noteObject)
+      .then((returnedNote) => {
+        setNotes(notes.concat(returnedNote));
+        setNewNote("");
+      })
+      .catch(() => {
+        setErrorMessage("Failed to add note to server");
+        setTimeout(() => setErrorMessage(null), 5000);
+      });
   };
 
   const handleNoteChange = (event) => {
